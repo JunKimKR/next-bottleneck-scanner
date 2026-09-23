@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {enrich,changeSignals,themeProposals} from '../src/signals.mjs';
+import {fundamentals,assess} from '../src/engine.mjs';
+import {htmlText} from '../src/documents.mjs';
+const now=new Date('2026-09-23'),source='https://example.com/ir';
+const entry=(key,value,date,unit='USD')=>({type:'metric',key,value,date,unit,reviewed:true,source,id:1});
+test('Backlog YoY uses matched fiscal year, not the previous quarter',()=>{const c=enrich({metrics:{}},[entry('backlog',100,'2025-06-30'),entry('backlog',160,'2026-03-31'),entry('backlog',200,'2026-06-30')],now);assert.equal(c.metrics.backlogGrowth.value,100);assert.equal(c.metrics.backlogGrowth.kind,'Calculated');assert.equal(c.metrics.backlogGrowth.inputs.length,2);});
+test('Book-to-bill cannot mix different reporting periods',()=>{const c=enrich({metrics:{revenue:{value:100,period_end:'2026-03-31'}}},[entry('bookings',200,'2026-06-30')],now);assert.equal(c.metrics.bookToBill,undefined);});
+test('A slow total business can expose a rapid new growth engine',()=>{const c=enrich({metrics:{}},[entry('revenueGrowth',8,'2026-06-30','%'),entry('dataCenterRevenueGrowth',80,'2026-06-30','%')],now);assert.equal(c.oldNewGrowth,true);assert.equal(c.maxSegmentGrowth,80);});
+test('Newer revenue taxonomy wins over a stale tag',()=>{const v=(end,val,filed)=>({start:end.slice(0,4)+'-04-01',end,val,filed,form:'10-Q'});const f={facts:{'us-gaap':{Revenues:{units:{USD:[v('2020-06-30',10,'2020-08-01')]}},RevenueFromContractWithCustomerIncludingAssessedTax:{units:{USD:[v('2026-06-30',1000,'2026-08-01')]}}}}};assert.equal(fundamentals(f,source).metrics.revenue.value,1000);});
+test('Stale growth never receives a score',()=>{const a=assess({ticker:'X',metrics:{revenueGrowth:{value:100,period_end:'2020-01-01'}}},[],now);assert.equal(a.points.growth,null);});
+test('Fundamental weakening requires observed changes across metrics',()=>{const previous={metrics:{revenueGrowth:{value:30,period_end:'2026-03-31'},backlogGrowth:{value:40,period_end:'2026-03-31'}},assessment:{chinaRisk:'LOW'}};const current={metrics:{revenueGrowth:{value:10,period_end:'2026-06-30'},backlogGrowth:{value:5,period_end:'2026-06-30'}},assessment:{chinaRisk:'LOW'}};assert.equal(changeSignals(current,previous).change,'Thesis Weakening');});
+test('HTML extraction excludes scripts and hidden XBRL headers',()=>{assert.equal(htmlText('<script>AI fake</script><ix:header>fake</ix:header><p>real &amp; text</p>'),'real & text');});
+test('Unknown repeated phrases enter review queue without becoming proven theses',()=>{const p=themeProposals([{ticker:'X',kind:'IR',period:'2026-01-01',source,text:'ordinary industrial products '.repeat(30)},{ticker:'X',kind:'IR',period:'2026-06-30',source,text:'quantum networking '.repeat(20)}],[]);assert.ok(p.some(x=>x.phrase==='quantum networking'));assert.equal(p[0].status,'UNREVIEWED THEME PROPOSAL');});

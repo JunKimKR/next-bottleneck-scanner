@@ -1,0 +1,13 @@
+import {DatabaseSync} from 'node:sqlite';
+import {readFileSync,mkdirSync} from 'node:fs';
+const base=new URL('../data/',import.meta.url);mkdirSync(base,{recursive:true});
+export const db=new DatabaseSync(new URL('research.sqlite',base));
+db.exec(`PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS companies(ticker TEXT PRIMARY KEY,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS evidence(id INTEGER PRIMARY KEY,ticker TEXT NOT NULL,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS documents(id INTEGER PRIMARY KEY,ticker TEXT NOT NULL,payload TEXT NOT NULL); CREATE TABLE IF NOT EXISTS runs(id INTEGER PRIMARY KEY,started TEXT,status TEXT,payload TEXT); CREATE TABLE IF NOT EXISTS snapshots(id INTEGER PRIMARY KEY,created TEXT,payload TEXT); CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,payload TEXT);`);
+export const themes=JSON.parse(readFileSync(new URL('themes.json',base),'utf8'));
+export const trends=JSON.parse(readFileSync(new URL('trends.json',base),'utf8'));
+for(const c of JSON.parse(readFileSync(new URL('universe.json',base),'utf8')))db.prepare('INSERT OR IGNORE INTO companies VALUES(?,?)').run(c.ticker,JSON.stringify({...c,metrics:{},bars:[],technical:{},filings:[]}));
+export const companies=()=>db.prepare('SELECT payload FROM companies ORDER BY ticker').all().map(x=>JSON.parse(x.payload));
+export const saveCompany=c=>db.prepare('INSERT OR REPLACE INTO companies VALUES(?,?)').run(c.ticker,JSON.stringify(c));
+export const evidence=ticker=>db.prepare('SELECT id,payload FROM evidence WHERE ticker=? ORDER BY id').all(ticker).map(x=>({...JSON.parse(x.payload),id:x.id}));
+export const documents=ticker=>db.prepare('SELECT payload FROM documents WHERE ticker=? ORDER BY id').all(ticker).map(x=>JSON.parse(x.payload));
+export const setting=(key,value)=>value===undefined?JSON.parse(db.prepare('SELECT payload FROM settings WHERE key=?').get(key)?.payload||'null'):db.prepare('INSERT OR REPLACE INTO settings VALUES(?,?)').run(key,JSON.stringify(value));

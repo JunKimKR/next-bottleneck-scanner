@@ -1,0 +1,9 @@
+.env
+data/*.sqlite*
+data/cache/
+data/reports/
+node_modules/
+
+# Generated exports and owner-specific hosting configuration
+dist/snapshot.json
+.openai/hosting.json

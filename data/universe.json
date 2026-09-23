@@ -1,0 +1,12 @@
+[
+ {"ticker":"AMKR","name":"Amkor Technology","cik":"0001047127","themes":["packaging"]},
+ {"ticker":"KLIC","name":"Kulicke and Soffa","cik":"0000056978","themes":["packaging"]},
+ {"ticker":"COHU","name":"Cohu","cik":"0000021535","themes":["packaging"]},
+ {"ticker":"POWL","name":"Powell Industries","cik":"0000080420","themes":["power","epc"]},
+ {"ticker":"MYRG","name":"MYR Group","cik":"0000700923","themes":["epc"]},
+ {"ticker":"ENS","name":"EnerSys","cik":"0001289308","themes":["backup"]},
+ {"ticker":"AAON","name":"AAON","cik":"0000824142","themes":["cooling"]},
+ {"ticker":"MOD","name":"Modine Manufacturing","cik":"0000067347","themes":["cooling"]},
+ {"ticker":"VIAV","name":"Viavi Solutions","cik":"0000912093","themes":["optical"]},
+ {"ticker":"AEIS","name":"Advanced Energy Industries","cik":"0000927003","themes":["power"]}
+]
